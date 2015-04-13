@@ -54,7 +54,7 @@ public class ServiceFileCard {
 				+ ServletFileUpload.isMultipartContent(request));
 
 		Response response;
-		ResponseBuilder builder = null;
+		ResponseBuilder builder = Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE).entity("tgd incorrecto");
 		String error="";
 		FileTGD tgd = null;
 		if (ServletFileUpload.isMultipartContent(request)) {
@@ -131,17 +131,21 @@ public class ServiceFileCard {
 				
 				
 			} catch (Exception ex) {
+				log.error(ex.getMessage());
 				error+= "\nError encountered while uploading file " + ex
 						+ ex.getMessage();
 				builder=Response.serverError().entity(error);
+			
 			}finally{
-			response=builder.build();
-			return response;
+				response=builder.build();
+				return response;
 			}
-		}
 		
+		
+		}
 		response=builder.build();
 		return response;
+		
 	}
 }
 
