@@ -1,11 +1,7 @@
 package org.service.filecard;
 
-
 import java.util.List;
 import java.util.Iterator;
-
-
-
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -20,6 +16,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.tacografo.file.FileTGD;
+import org.tacografo.file.error.ErrorFile;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -27,20 +24,23 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.logging.Logger;
 
 /**
- * @author Andres Carmona Gil
- * Servicio para la recepcion de archivos tgd con rest utilizando jax-rs y estructura
- * para la interpretacion de los ficheros tgd  
+ * @author Andres Carmona Gil Servicio para la recepcion de archivos tgd con
+ *         rest utilizando jax-rs y estructura para la interpretacion de los
+ *         ficheros tgd
  */
 @Path("filecard")
 public class ServiceFileCard {
 	private static final Logger log = Logger.getLogger(ServiceFileCard.class);
+
 	@GET
-	public String Test(){
-		return "conexion establecida";
+	public String Test() {
+		return "conexion establecida con servidor externo";
 	}
+
 	/**
-	 * Espera datos de un multpart/form-data de un formulario y producira si el fichero 
-	 * tgd es correcto una respuesta con de la clase FileTGD en json.
+	 * Espera datos de un multpart/form-data de un formulario y producira si el
+	 * fichero tgd es correcto una respuesta con de la clase FileTGD en json.
+	 * 
 	 * @param request
 	 * @return response json FileTGD
 	 * @throws WebApplicationException
@@ -49,17 +49,21 @@ public class ServiceFileCard {
 	@POST
 	@Produces("application/json")
 	@Consumes("multipart/form-data")
-	public Response uploadFile(@Context HttpServletRequest request) throws WebApplicationException {
+	public Response uploadFile(@Context HttpServletRequest request)	throws WebApplicationException {
+		
 		log.info("Servico iniciado con multipar a : "
 				+ ServletFileUpload.isMultipartContent(request));
 
 		Response response;
-		ResponseBuilder builder = null;
-		String error="";
+		ResponseBuilder builder = Response.status(
+				Response.Status.UNSUPPORTED_MEDIA_TYPE)
+				.entity("tgd incorrecto");
+		String error = "";
+		
 		FileTGD tgd = null;
+		
 		if (ServletFileUpload.isMultipartContent(request)) {
 			
-
 			// Create a factory for disk-based file items
 			DiskFileItemFactory fileItemFactory = new DiskFileItemFactory();
 
@@ -80,12 +84,12 @@ public class ServiceFileCard {
 			// fileItemFactory.setRepository(tmpDir);
 
 			// Create a new file upload handler
-			
+
 			ServletFileUpload uploadHandler = new ServletFileUpload(
 					fileItemFactory);
-
+			log.info("creation struct tgd");
 			try {
-				
+
 				/*
 				 * Parse the request
 				 */
@@ -107,42 +111,49 @@ public class ServiceFileCard {
 						// item.write(file);
 						
 						tgd = new FileTGD(item.getInputStream(),
-								(int) item.getSize());
+								(int) item.getSize(), item.getName());
 						log.info("tgd construct true");
-
+						
 					}
-					
 				}
-				if (tgd != null) {
-					log.info("Response application json");
-					builder=Response.ok(tgd.getJson(), MediaType.APPLICATION_JSON);					
+				log.info("tgd",tgd);
+				if (tgd==null) {
+					log.info("tgd error= archivo no reconocido");
+					builder = Response.status(
+							Response.Status.UNSUPPORTED_MEDIA_TYPE).entity(
+							"tgd incorrecto");
 				} else {
-					log.warn("tgd error= archivo no reconocido");
-					builder=Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE).entity("tgd incorrecto");					
-					//return Response.serverError().entity("archivo no valido").build();//return res; //throw new WebApplicationException(res);
-					// return Response.ok("tgd incorrecto").build();
+					log.info("Response application json");
+					builder = Response.ok(tgd.getJson(),
+							MediaType.APPLICATION_JSON);
+
 				}
-				
+			}catch(ErrorFile ef){
+				log.info("tgd error= archivo no reconocido");
+				builder = Response.status(
+						Response.Status.UNSUPPORTED_MEDIA_TYPE).entity(
+						"tgd incorrecto");			
 			} catch (FileUploadException ex) {
 				log.error(ex.getMessage());
-				 error+= "\nError encountered while parsing the request "
+				error += "\nError encountered while parsing the request "
 						+ ex.getMessage();
-				builder=Response.serverError().entity(error);
-				
-				
+				builder = Response.serverError().entity(error);
 			} catch (Exception ex) {
-				error+= "\nError encountered while uploading file " + ex
+				ex.printStackTrace();
+				log.error(ex.getMessage());				
+				error += "\nError encountered while uploading file " + ex
 						+ ex.getMessage();
-				builder=Response.serverError().entity(error);
+				builder = Response.serverError().entity(error);
+
 			}finally{
-			response=builder.build();
-			return response;
+				response = builder.build();
+				return response;
 			}
+			
+
 		}
-		
-		response=builder.build();
+		response = builder.build();
 		return response;
+
 	}
 }
-
-
