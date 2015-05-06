@@ -49,8 +49,8 @@ public class ServiceFileCard {
 	@POST
 	@Produces("application/json")
 	@Consumes("multipart/form-data")
-	public Response uploadFile(@Context HttpServletRequest request)
-			throws WebApplicationException {
+	public Response uploadFile(@Context HttpServletRequest request)	throws WebApplicationException {
+		
 		log.info("Servico iniciado con multipar a : "
 				+ ServletFileUpload.isMultipartContent(request));
 
@@ -59,9 +59,11 @@ public class ServiceFileCard {
 				Response.Status.UNSUPPORTED_MEDIA_TYPE)
 				.entity("tgd incorrecto");
 		String error = "";
+		
 		FileTGD tgd = null;
+		
 		if (ServletFileUpload.isMultipartContent(request)) {
-
+			
 			// Create a factory for disk-based file items
 			DiskFileItemFactory fileItemFactory = new DiskFileItemFactory();
 
@@ -85,7 +87,7 @@ public class ServiceFileCard {
 
 			ServletFileUpload uploadHandler = new ServletFileUpload(
 					fileItemFactory);
-
+			log.info("creation struct tgd");
 			try {
 
 				/*
@@ -107,14 +109,15 @@ public class ServiceFileCard {
 						// Estas lineas son para grabar el fichero en disco
 						// File file = new File(destinationDir,item.getName());
 						// item.write(file);
-
+						
 						tgd = new FileTGD(item.getInputStream(),
-								(int) item.getSize());
+								(int) item.getSize(), item.getName());
 						log.info("tgd construct true");
+						
 					}
 				}
-
-				if (tgd.getLista_bloque().isEmpty()) {
+				log.info("tgd",tgd);
+				if (tgd==null) {
 					log.info("tgd error= archivo no reconocido");
 					builder = Response.status(
 							Response.Status.UNSUPPORTED_MEDIA_TYPE).entity(
@@ -136,7 +139,8 @@ public class ServiceFileCard {
 						+ ex.getMessage();
 				builder = Response.serverError().entity(error);
 			} catch (Exception ex) {
-				log.error(ex.getMessage());
+				ex.printStackTrace();
+				log.error(ex.getMessage());				
 				error += "\nError encountered while uploading file " + ex
 						+ ex.getMessage();
 				builder = Response.serverError().entity(error);
