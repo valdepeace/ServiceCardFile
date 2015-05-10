@@ -15,6 +15,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import org.tacografo.file.FileBlockTGD;
 import org.tacografo.file.FileTGD;
 import org.tacografo.file.error.ErrorFile;
 import org.apache.commons.fileupload.FileItem;
@@ -45,7 +46,7 @@ public class ServiceFileCard {
 	 * @return response json FileTGD
 	 * @throws WebApplicationException
 	 */
-	@SuppressWarnings({ "finally", "null" })
+	@SuppressWarnings({ "finally" })
 	@POST
 	@Produces("application/json")
 	@Consumes("multipart/form-data")
@@ -60,7 +61,7 @@ public class ServiceFileCard {
 				.entity("tgd incorrecto");
 		String error = "";
 		
-		FileTGD tgd = null;
+		FileBlockTGD tgd = null;
 		
 		if (ServletFileUpload.isMultipartContent(request)) {
 			
@@ -93,8 +94,8 @@ public class ServiceFileCard {
 				/*
 				 * Parse the request
 				 */
-				List items = uploadHandler.parseRequest(request);
-				Iterator itr = items.iterator();
+				List<FileItem> items = uploadHandler.parseRequest(request);
+				Iterator<?> itr = items.iterator();
 
 				while (itr.hasNext()) {
 					FileItem item = (FileItem) itr.next();
@@ -110,7 +111,7 @@ public class ServiceFileCard {
 						// File file = new File(destinationDir,item.getName());
 						// item.write(file);
 						
-						tgd = new FileTGD(item.getInputStream(),
+						tgd = new FileBlockTGD(item.getInputStream(),
 								(int) item.getSize(), item.getName());
 						log.info("tgd construct true");
 						
